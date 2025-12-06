@@ -28,6 +28,7 @@ class State(MessagesState):
     final_report: Annotated[str, lambda a, b: b] = ""
     auto_accepted_plan: Annotated[bool, lambda a, b: b] = False
     enable_background_investigation: Annotated[bool, lambda a, b: b] = True
+    enable_knowledge_background_only: Annotated[bool, lambda a, b: b] = False
     background_investigation_results: Annotated[str, lambda a, b: b] = None
 
     # Clarification state tracking (disabled by default)

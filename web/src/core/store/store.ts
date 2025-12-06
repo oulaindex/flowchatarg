@@ -115,6 +115,7 @@ export async function sendMessage(
       enable_deep_thinking: settings.enableDeepThinking ?? false,
       enable_background_investigation:
         settings.enableBackgroundInvestigation ?? true,
+      enable_knowledge_background_only: settings.enableKnowledgeBackgroundOnly,
       max_plan_iterations: settings.maxPlanIterations,
       max_step_num: settings.maxStepNum,
       max_search_results: settings.maxSearchResults,
@@ -144,7 +145,7 @@ export async function sendMessage(
     for await (const event of stream) {
       const { type, data } = event;
       let message: Message | undefined;
-      
+
       // Handle tool_call_result specially: use the message that contains the tool call
       if (type === "tool_call_result") {
         message = findMessageByToolCallId(data.tool_call_id);
@@ -161,7 +162,7 @@ export async function sendMessage(
       } else {
         // For other event types, use data.id
         messageId = data.id;
-        
+
         if (!existsMessage(messageId)) {
           message = {
             id: messageId,
@@ -178,7 +179,7 @@ export async function sendMessage(
           appendMessage(message);
         }
       }
-      
+
       message ??= getMessage(messageId);
       if (message) {
         console.log("message", message, event)
@@ -188,7 +189,7 @@ export async function sendMessage(
         scheduleUpdate();
       }
     }
-  } catch (err){
+  } catch (err) {
     toast(String(err));
     console.log(err)
     toast("An error occurred while generating the response. Please try again.");
@@ -416,7 +417,7 @@ export function useRenderableMessageIds() {
       return state.messageIds.filter((messageId) => {
         const message = state.messages.get(messageId);
         if (!message) return false;
-        
+
         // Only include messages that match MessageListItem rendering conditions
         // These are the same conditions checked in MessageListItem component
         return (

@@ -62,6 +62,9 @@ class ChatRequest(BaseModel):
     enable_background_investigation: Optional[bool] = Field(
         True, description="Whether to get background investigation before plan"
     )
+    enable_knowledge_background_only: Optional[bool] = Field(
+        False, description="Whether to only use knowledge background for response"
+    )
     report_style: Optional[ReportStyle] = Field(
         ReportStyle.ACADEMIC, description="The style of the report"
     )

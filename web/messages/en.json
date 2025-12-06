@@ -113,6 +113,11 @@
         "title": "Investigation Mode: {status}",
         "description": "When enabled, DeerFlow will perform a quick search before planning. This is useful for researches related to ongoing events and news."
       },
+      "knowledgeBackgroundOnly": "Knowledge Background Only",
+      "knowledgeBackgroundOnlyTooltip": {
+        "title": "Knowledge Background Only Mode: {status}",
+        "description": "When enabled, DeerFlow will only conduct background investigation and generate a summary directly based on the results, without executing subsequent research plans."
+      },
       "enhancePrompt": "Enhance prompt with AI",
       "on": "On",
       "off": "Off"

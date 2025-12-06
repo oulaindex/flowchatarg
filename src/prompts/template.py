@@ -73,7 +73,7 @@ def apply_prompt_template(
 
     try:
         # Normalize locale format
-        normalized_locale = locale.replace("-", "_") if locale and locale.strip() else "en_US"
+        normalized_locale = locale.replace("-", "_") if locale and locale.strip() else "zh_CN"
         
         # Try locale-specific template first
         try:

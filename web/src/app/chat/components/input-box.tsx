@@ -3,7 +3,7 @@
 
 import { MagicWandIcon } from "@radix-ui/react-icons";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, Lightbulb, X } from "lucide-react";
+import { ArrowUp, BookOpen, Lightbulb, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useRef, useState } from "react";
 
@@ -21,6 +21,7 @@ import type { Option, Resource } from "~/core/messages";
 import {
   setEnableDeepThinking,
   setEnableBackgroundInvestigation,
+  setEnableKnowledgeBackgroundOnly,
   useSettingsStore,
 } from "~/core/store";
 import { cn } from "~/lib/utils";
@@ -54,6 +55,9 @@ export function InputBox({
   );
   const backgroundInvestigation = useSettingsStore(
     (state) => state.general.enableBackgroundInvestigation,
+  );
+  const knowledgeBackgroundOnly = useSettingsStore(
+    (state) => state.general.enableKnowledgeBackgroundOnly,
   );
   const { config, loading } = useConfig();
   const reportStyle = useSettingsStore((state) => state.general.reportStyle);
@@ -272,6 +276,33 @@ export function InputBox({
               }
             >
               <Detective /> {t("investigation")}
+            </Button>
+          </Tooltip>
+
+          <Tooltip
+            className="max-w-60"
+            title={
+              <div>
+                <h3 className="mb-2 font-bold">
+                  {t("knowledgeBackgroundOnlyTooltip.title", {
+                    status: knowledgeBackgroundOnly ? t("on") : t("off"),
+                  })}
+                </h3>
+                <p>{t("knowledgeBackgroundOnlyTooltip.description")}</p>
+              </div>
+            }
+          >
+            <Button
+              className={cn(
+                "rounded-2xl",
+                knowledgeBackgroundOnly && "!border-brand !text-brand",
+              )}
+              variant="outline"
+              onClick={() =>
+                setEnableKnowledgeBackgroundOnly(!knowledgeBackgroundOnly)
+              }
+            >
+              <BookOpen /> {t("knowledgeBackgroundOnly")}
             </Button>
           </Tooltip>
           <ReportStyleDialog />

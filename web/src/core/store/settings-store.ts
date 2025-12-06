@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: SettingsState = {
     maxClarificationRounds: 3,
     enableDeepThinking: false,
     enableBackgroundInvestigation: false,
+    enableKnowledgeBackgroundOnly: false,
     maxPlanIterations: 1,
     maxStepNum: 3,
     maxSearchResults: 3,
@@ -31,6 +32,7 @@ export type SettingsState = {
     maxClarificationRounds: number;
     enableDeepThinking: boolean;
     enableBackgroundInvestigation: boolean;
+    enableKnowledgeBackgroundOnly: boolean;
     maxPlanIterations: number;
     maxStepNum: number;
     maxSearchResults: number;
@@ -84,14 +86,14 @@ export const saveSettings = () => {
 export const getChatStreamSettings = () => {
   let mcpSettings:
     | {
-        servers: Record<
-          string,
-          MCPServerMetadata & {
-            enabled_tools: string[];
-            add_to_agents: string[];
-          }
-        >;
-      }
+      servers: Record<
+        string,
+        MCPServerMetadata & {
+          enabled_tools: string[];
+          add_to_agents: string[];
+        }
+      >;
+    }
     | undefined = undefined;
   const { mcp, general } = useSettingsStore.getState();
   const mcpServers = mcp.servers.filter((server) => server.enabled);
@@ -151,6 +153,7 @@ export function setEnableDeepThinking(value: boolean) {
     general: {
       ...state.general,
       enableDeepThinking: value,
+      enableKnowledgeBackgroundOnly: value ? false : state.general.enableKnowledgeBackgroundOnly,
     },
   }));
   saveSettings();
@@ -158,11 +161,12 @@ export function setEnableDeepThinking(value: boolean) {
 
 export function setEnableBackgroundInvestigation(value: boolean) {
   debugger
-  
+
   useSettingsStore.setState((state) => ({
     general: {
       ...state.general,
       enableBackgroundInvestigation: value,
+      enableKnowledgeBackgroundOnly: value ? false : state.general.enableKnowledgeBackgroundOnly,
     },
   }));
   saveSettings();
@@ -173,6 +177,19 @@ export function setEnableClarification(value: boolean) {
     general: {
       ...state.general,
       enableClarification: value,
+    },
+  }));
+  saveSettings();
+}
+
+export function setEnableKnowledgeBackgroundOnly(value: boolean) {
+  useSettingsStore.setState((state) => ({
+    general: {
+      ...state.general,
+      enableKnowledgeBackgroundOnly: value,
+      // Ensure priority by disabling other modes if this one is enabled
+      enableDeepThinking: value ? false : state.general.enableDeepThinking,
+      enableBackgroundInvestigation: value ? false : state.general.enableBackgroundInvestigation,
     },
   }));
   saveSettings();

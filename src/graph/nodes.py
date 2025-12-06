@@ -13,6 +13,8 @@ from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.types import Command, interrupt
 
+from src.rag.ragflow import RAGFlowProvider
+
 from src.agents import create_agent
 from src.config.agents import AGENT_LLM_MAP
 from src.config.configuration import Configuration
@@ -185,6 +187,41 @@ def background_investigation_node(state: State, config: RunnableConfig):
     query = state.get("clarified_research_topic") or state.get("research_topic")
     background_investigation_results = []
     
+    # Check for Knowledge Background Only Mode
+    if state.get("enable_knowledge_background_only"):
+        logger.info("Knowledge Background Only Mode Active")
+        provider = RAGFlowProvider()
+        documents = provider.query_relevant_documents(query, state.get("resources", []))
+        
+        # Format context
+        context_str = ""
+        for i, doc in enumerate(documents):
+            chunks_text = "\n".join([c.content for c in doc.chunks])
+            context_str += f"Source {i+1} ({doc.title}):\n{chunks_text}\n\n"
+        
+        if not context_str:
+            context_str = "No relevant background information found."
+
+        # Direct LLM Summary/Report
+        llm = get_llm_by_type("basic") 
+        
+        prompt = [
+            {"role": "system", "content": "You are a helpful assistant. Generate a comprehensive report answering the user's query strictly based on the provided background information."},
+            {"role": "user", "content": f"Query: {query}\n\nBackground Information:\n{context_str}"}
+        ]
+        
+        response = llm.invoke(prompt)
+        
+        # Return Final Report and End
+        return Command(
+            update={
+                "background_investigation_results": context_str,
+                "final_report": response.content,
+                **preserve_state_meta_fields(state)
+            },
+            goto="__end__"
+        )
+    
     if SELECTED_SEARCH_ENGINE == SearchEngine.TAVILY.value:
         searched_content = LoggedTavilySearch(
             max_results=configurable.max_search_results
@@ -244,6 +281,7 @@ def planner_node(
     """Planner node that generate the full plan."""
     logger.info("Planner generating full plan with locale: %s", state.get("locale", "en-US"))
     configurable = Configuration.from_runnable_config(config)
+    logger.info(f"con1111111111111111111rable: {configurable}")
     plan_iterations = state["plan_iterations"] if state.get("plan_iterations", 0) else 0
 
     # For clarification feature: use the clarified research topic (complete history)
@@ -256,14 +294,14 @@ def planner_node(
             {"role": "user", "content": state["clarified_research_topic"]}
         ]
         modified_state["research_topic"] = state["clarified_research_topic"]
-        messages = apply_prompt_template("planner", modified_state, configurable, state.get("locale", "en-US"))
+        messages = apply_prompt_template("planner", modified_state, configurable, state.get("locale", "zh-CN"))
 
         logger.info(
             f"Clarification mode: Using clarified research topic: {state['clarified_research_topic']}"
         )
     else:
         # Normal mode: use full conversation history
-        messages = apply_prompt_template("planner", state, configurable, state.get("locale", "en-US"))
+        messages = apply_prompt_template("planner", state, configurable, state.get("locale", "zh-CN"))
 
     if state.get("enable_background_investigation") and state.get(
         "background_investigation_results"
@@ -305,7 +343,7 @@ def planner_node(
         for chunk in response:
             full_response += chunk.content
     logger.debug(f"Current state messages: {state['messages']}")
-    logger.info(f"Planner response: {full_response}")
+    logger.info(f"Planner response: {messages}")
 
     try:
         curr_plan = json.loads(repair_json_output(full_response))
@@ -673,8 +711,11 @@ def coordinator_node(
         goto = "planner"
 
     # Apply background_investigation routing if enabled (unified logic)
-    if goto == "planner" and state.get("enable_background_investigation"):
-        goto = "background_investigator"
+    if goto == "planner":
+        if state.get("enable_knowledge_background_only"):
+            goto = "background_investigator"
+        elif state.get("enable_background_investigation"):
+            goto = "background_investigator"
 
     # Set default values for state variables (in case they're not defined in legacy mode)
     if not enable_clarification:
